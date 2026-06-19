@@ -1,0 +1,49 @@
+<!--
+  ARCHIVO DE REFERENCIA - NO es un AndroidManifest.xml funcional por si solo.
+
+  Cuando ejecutes "flutter create ." (ver INSTRUCCIONES_APK.md), Flutter
+  generara automaticamente: android/app/src/main/AndroidManifest.xml
+
+  Debes EDITAR ese archivo generado y asegurarte de que contenga lo
+  siguiente (agrega los permisos y mantiene lo que Flutter ya puso):
+-->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Permiso de camara: requerido por mobile_scanner para leer codigos de barras -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Declara que la app usa la camara pero no la requiere obligatoriamente
+         como caracteristica de hardware (algunas tablets/equipos sin camara
+         trasera podrian instalar la app igual) -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
+    <application
+        android:label="Inventario de Bodega"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <!--
+          Flutter ya genera el bloque <activity> con MainActivity, los
+          <meta-data> de Flutter, y el <intent-filter> de MAIN/LAUNCHER.
+          NO los borres: solo agrega el android:label de arriba si quieres
+          cambiar el nombre visible de la app, y los permisos/uses-feature
+          de arriba como hijos directos de <manifest> (antes de <application>).
+        -->
+    </application>
+
+</manifest>
+
+<!--
+  NOTA: No se necesita pedir permisos de almacenamiento (READ/WRITE_EXTERNAL_STORAGE)
+  porque:
+  - file_picker usa el selector de archivos del sistema (Storage Access Framework),
+    no requiere permisos especiales en Android 6+.
+  - El archivo Excel exportado se guarda en el directorio privado de la app
+    (getApplicationDocumentsDirectory) y se comparte con share_plus, que
+    tampoco requiere permisos adicionales.
+-->

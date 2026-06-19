@@ -1,0 +1,67 @@
+name: Build APK
+
+# Se ejecuta automaticamente cada vez que subes (push) cambios a la rama
+# "main", y tambien se puede lanzar manualmente desde la pestaña "Actions"
+# en GitHub (boton "Run workflow"), util si solo tienes el telefono.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Java (requerido por Gradle/Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Mostrar version de Flutter
+        run: flutter --version
+
+      - name: Obtener dependencias
+        run: flutter pub get
+
+      - name: Generar carpeta nativa android (solo si no existe)
+        run: |
+          if [ ! -d "android" ]; then
+            echo "No existe android/, generando proyecto nativo con flutter create..."
+            flutter create --platforms=android --org com.miempresa --project-name inventario_bodega .
+            flutter pub get
+          else
+            echo "La carpeta android/ ya existe, se usa tal cual."
+          fi
+
+      - name: Agregar permiso de camara al AndroidManifest.xml
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            sed -i 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />|' "$MANIFEST"
+            echo "Permiso de camara agregado."
+          else
+            echo "El permiso de camara ya estaba presente."
+          fi
+          sed -i 's|android:label="inventario_bodega"|android:label="Inventario de Bodega"|' "$MANIFEST"
+          cat "$MANIFEST"
+
+      - name: Analizar el codigo (no detiene el build si hay warnings)
+        run: flutter analyze || true
+
+      - name: Compilar APK release
+        run: flutter build apk --release
+
+      - name: Subir APK como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventario-bodega-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
